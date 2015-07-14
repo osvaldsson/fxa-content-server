@@ -26,6 +26,7 @@ function (chai, sinon, p, Constants, Session, RedirectAuthenticationBroker,
     var windowMock;
     var user;
     var account;
+    var metrics;
 
     beforeEach(function () {
       windowMock = new WindowMock();
@@ -35,10 +36,14 @@ function (chai, sinon, p, Constants, Session, RedirectAuthenticationBroker,
         sessionToken: 'abc123'
       });
 
+      metrics = { flush: p };
+      sinon.spy(metrics, 'flush');
+
       broker = new RedirectAuthenticationBroker({
         relier: relier,
         window: windowMock,
-        session: Session
+        session: Session,
+        metrics: metrics
       });
 
       sinon.stub(broker, 'finishOAuthFlow', function () {
@@ -53,6 +58,8 @@ function (chai, sinon, p, Constants, Session, RedirectAuthenticationBroker,
             redirect: REDIRECT_TO
           })
           .then(function () {
+            assert.isTrue(metrics.flush.calledOnce);
+            assert.lengthOf(metrics.flush.getCall(0).args, 0);
             assert.equal(windowMock.location.href, REDIRECT_TO);
           });
         });
@@ -65,6 +72,8 @@ function (chai, sinon, p, Constants, Session, RedirectAuthenticationBroker,
             error: 'error'
           })
           .then(function () {
+            assert.isTrue(metrics.flush.calledOnce);
+            assert.lengthOf(metrics.flush.getCall(0).args, 0);
             assert.include(windowMock.location.href, REDIRECT_TO);
             assert.include(windowMock.location.href, 'error=error');
           });
@@ -79,6 +88,8 @@ function (chai, sinon, p, Constants, Session, RedirectAuthenticationBroker,
             action: action
           })
           .then(function () {
+            assert.isTrue(metrics.flush.calledOnce);
+            assert.lengthOf(metrics.flush.getCall(0).args, 0);
             assert.include(windowMock.location.href, REDIRECT_TO);
             assert.include(windowMock.location.href, 'action=' + action);
           });
@@ -92,6 +103,8 @@ function (chai, sinon, p, Constants, Session, RedirectAuthenticationBroker,
             error: 'error'
           })
           .then(function () {
+            assert.isTrue(metrics.flush.calledOnce);
+            assert.lengthOf(metrics.flush.getCall(0).args, 0);
             assert.include(windowMock.location.href, REDIRECT_TO);
             assert.include(windowMock.location.href, 'test=param');
             assert.include(windowMock.location.href, 'error=error');

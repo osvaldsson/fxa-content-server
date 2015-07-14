@@ -421,7 +421,8 @@ function (
             relier: this._relier,
             assertionLibrary: this._assertionLibrary,
             oAuthClient: this._oAuthClient,
-            session: Session
+            session: Session,
+            metrics: this._metrics
           });
         } else {
           this._authenticationBroker = new BaseAuthenticationBroker({

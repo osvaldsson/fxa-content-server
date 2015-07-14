@@ -104,7 +104,7 @@ define([
     ALLOWED_FIELDS: ALLOWED_FIELDS,
 
     init: function () {
-      this._flush = _.bind(this.flush, this);
+      this._flush = _.bind(this.flush, this, true);
       $(this._window).on('unload', this._flush);
 
       // Set the initial inactivity timeout to clear navigation timing data.
@@ -119,7 +119,7 @@ define([
     /**
      * Send the collected data to the backend.
      */
-    flush: function () {
+    flush: function (flushSynchronously) {
       // Inactivity timer is restarted when the next event/timer comes in.
       // This avoids sending empty result sets if the tab is
       // just sitting there open with no activity.
@@ -133,7 +133,7 @@ define([
 
       // use a synchronous request to block the page from unloading
       // until the request is complete.
-      return this._send(filteredData, url, false);
+      return this._send(filteredData, url, ! flushSynchronously);
     },
 
     _clearInactivityFlushTimeout: function () {
@@ -203,7 +203,7 @@ define([
     _send: function (data, url, async) {
       var self = this;
       return this._ajax({
-        async: async !== false,
+        async: async,
         type: 'POST',
         url: url,
         contentType: 'application/json',
