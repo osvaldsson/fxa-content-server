@@ -48,5 +48,22 @@ define([
     }, dfd.reject.bind(dfd)));
   };
 
+  suite['#post /metrics - parses text/plain as JSON'] = function () {
+    var dfd = this.async(intern.config.asyncTimeout);
+
+    request.post(serverUrl + '/metrics', {
+      data: {
+        events: [ { type: 'event1', offset: 1 } ]
+      },
+      headers: {
+        'Content-Type': 'text/plain;charset=UTF-8'
+      }
+    },
+    dfd.callback(function (err, res) {
+      // TODO: assert against mockery-injected logger
+      assert.equal(res.statusCode, 200);
+    }, dfd.reject.bind(dfd)));
+  };
+
   registerSuite(suite);
 });
