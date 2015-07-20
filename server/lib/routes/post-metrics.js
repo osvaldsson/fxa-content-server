@@ -5,6 +5,7 @@
 
 var MetricsCollector = require('../metrics-collector-stderr');
 var StatsDCollector = require('../statsd-collector');
+var logger = require('mozlog')('server.post-metrics');
 
 module.exports = function () {
   var metricsCollector = new MetricsCollector();
@@ -15,14 +16,24 @@ module.exports = function () {
     method: 'post',
     path: '/metrics',
     process: function (req, res) {
-      // don't wait around to send a response.
-      res.json({ success: true });
+      try {
+        // don't wait around to send a response.
+        res.json({ success: true });
 
-      var metrics = req.body;
-      metrics.agent = req.get('user-agent');
-      metricsCollector.write(metrics);
-      // send the metrics body to the StatsD collector for processing
-      statsd.write(metrics);
+        var metrics = req.body;
+        var contentType = req.get('content-type') || '';
+        if (contentType.indexOf('text/plain') === 0) {
+          metrics = JSON.parse(metrics);
+        }
+
+        metrics.agent = req.get('user-agent');
+        metricsCollector.write(metrics);
+
+        // send the metrics body to the StatsD collector for processing
+        statsd.write(metrics);
+      } catch (error) {
+        logger.error(error);
+      }
     }
   };
 };
