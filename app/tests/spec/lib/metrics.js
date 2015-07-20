@@ -161,14 +161,13 @@ function (chai, sinon, $, p, Metrics, AuthErrors, Environment, WindowMock, TestH
         describe('sendBeacon succeeds', function () {
           var result;
 
-          beforeEach(function (done) {
+          beforeEach(function () {
             sandbox.stub(windowMock.navigator, 'sendBeacon', function () {
               return true;
             });
-            metrics.flush().then(function (r) {
+            return metrics.flush().then(function (r) {
               result = r;
-              done();
-            }, done);
+            });
           });
 
           afterEach(function () {
@@ -179,8 +178,11 @@ function (chai, sinon, $, p, Metrics, AuthErrors, Environment, WindowMock, TestH
             assert.isTrue(windowMock.navigator.sendBeacon.calledOnce);
             assert.lengthOf(windowMock.navigator.sendBeacon.getCall(0).args, 2);
             assert.strictEqual(windowMock.navigator.sendBeacon.getCall(0).args[0], '/metrics');
+
             var data = JSON.parse(windowMock.navigator.sendBeacon.getCall(0).args[1]);
-            assert.lengthOf(Object.keys(data), 14);
+            assert.lengthOf(Object.keys(data), 20);
+            assert.isArray(data.ab);
+            assert.strictEqual(data.broker, 'none');
             assert.strictEqual(data.campaign, 'none');
             assert.strictEqual(data.context, 'web');
             assert.isNumber(data.duration);
@@ -189,15 +191,18 @@ function (chai, sinon, $, p, Metrics, AuthErrors, Environment, WindowMock, TestH
             assert.lengthOf(data.events, 2);
             assert.strictEqual(data.events[0].type, 'foo');
             assert.strictEqual(data.events[1].type, 'bar');
-            assert.strictEqual(data.migration, 'none');
             assert.strictEqual(data.lang, 'unknown');
             assert.isArray(data.marketing);
+            assert.strictEqual(data.migration, 'none');
             assert.isObject(data.navigationTiming);
             assert.isObject(data.screen);
             assert.strictEqual(data.service, 'none');
             assert.isObject(data.timers);
-            assert.strictEqual(data.broker, 'none');
-            assert.isArray(data.ab);
+            assert.strictEqual(data.utm_campaign, 'none');
+            assert.strictEqual(data.utm_content, 'none');
+            assert.strictEqual(data.utm_medium, 'none');
+            assert.strictEqual(data.utm_source, 'none');
+            assert.strictEqual(data.utm_term, 'none');
           });
 
           it('resolves to true', function () {
@@ -246,15 +251,14 @@ function (chai, sinon, $, p, Metrics, AuthErrors, Environment, WindowMock, TestH
         describe('ajax succeeds', function () {
           var result;
 
-          beforeEach(function (done) {
+          beforeEach(function () {
             sandbox.stub(xhr, 'ajax', function () {
               return p(true);
             });
             metrics.logEvent('baz');
-            metrics.flush().then(function (r) {
+            return metrics.flush().then(function (r) {
               result = r;
-              done();
-            }, done);
+            });
           });
 
           afterEach(function () {
@@ -264,14 +268,17 @@ function (chai, sinon, $, p, Metrics, AuthErrors, Environment, WindowMock, TestH
           it('calls ajax correctly', function () {
             assert.isTrue(xhr.ajax.calledOnce);
             assert.lengthOf(xhr.ajax.getCall(0).args, 1);
-            assert.isObject(xhr.ajax.getCall(0).args[0]);
-            assert.lengthOf(Object.keys(xhr.ajax.getCall(0).args[0]), 5);
-            assert.isFalse(xhr.ajax.getCall(0).args[0].async);
-            assert.strictEqual(xhr.ajax.getCall(0).args[0].type, 'POST');
-            assert.strictEqual(xhr.ajax.getCall(0).args[0].url, '/metrics');
-            assert.strictEqual(xhr.ajax.getCall(0).args[0].contentType, 'application/json');
-            var data = JSON.parse(xhr.ajax.getCall(0).args[0].data);
-            assert.lengthOf(Object.keys(data), 14);
+
+            var settings = xhr.ajax.getCall(0).args[0];
+            assert.isObject(settings):
+            assert.lengthOf(Object.keys(settings), 5);
+            assert.isFalse(settings.async);
+            assert.strictEqual(settings.type, 'POST');
+            assert.strictEqual(settings.url, '/metrics');
+            assert.strictEqual(settings.contentType, 'application/json');
+
+            var data = JSON.parse(settings.data);
+            assert.lengthOf(Object.keys(data), 20);
             assert.isArray(data.events);
             assert.lengthOf(data.events, 3);
             assert.strictEqual(data.events[0].type, 'foo');
@@ -328,8 +335,9 @@ function (chai, sinon, $, p, Metrics, AuthErrors, Environment, WindowMock, TestH
           assert.isTrue(metrics._send.calledOnce);
           assert.lengthOf(metrics._send.getCall(0).args, 2);
           assert.strictEqual(metrics._send.getCall(0).args[1], '/metrics');
+
           var data = metrics._send.getCall(0).args[0];
-          assert.lengthOf(Object.keys(data), 14);
+          assert.lengthOf(Object.keys(data), 20);
           assert.lengthOf(data.events, 3);
           assert.strictEqual(data.events[0].type, 'foo');
           assert.strictEqual(data.events[1].type, 'bar');
